@@ -3,7 +3,6 @@
 #include <memory>
 using namespace std;
 
-// Define the size of the board
 const int BOARD_WIDTH = 80;
 const int BOARD_HEIGHT = 25;
 
@@ -22,7 +21,6 @@ public:
 
 int Shape::nextID = 1;
 
-// Struct to define the board
 class Board {
 private:
     vector<vector<char>> grid;
@@ -69,7 +67,7 @@ private:
     Board& board;
 
 public:
-    Triangle(Board& board, int x, int y, int height)
+    Triangle(Board& board, int x, int y, int height) //x is column number and y is row+1
         : board(board) {
         this->x = x;
         this->y = y;
@@ -101,11 +99,45 @@ public:
     }
 };
 
+class Circle : public Shape {
+private:
+    int x, y, radius;
+    Board& board;
+
+public:
+    Circle(Board& board, int x, int y, int radius)
+        : board(board) {
+        this->x = x;
+        this->y = y;
+        this->radius = radius;
+    }
+
+    void draw() override {
+        vector<vector<char>>& grid = board.getGrid();
+
+        if (radius <= 0) return; //radius in itself can't be negative
+
+        for (int i = -radius; i <= radius; ++i) {  //distance to the left and to the right from the centre
+            for (int j = -radius; j <= radius; ++j) { //distance to the top and to the bottom from the centre
+                if ((i * i + j * j >= radius * radius - radius) && (i * i + j * j <= radius * radius)) { //formula check
+                    int drawX = x + i; //end x position on the grid
+                    int drawY = y + j; //end y position on the grid
+
+                    if (drawX >= 0 && drawX < BOARD_WIDTH && drawY >= 0 && drawY < BOARD_HEIGHT) { //what will really be printed
+                        grid[drawY][drawX] = '*';
+                    }
+                }
+            }
+        }
+    }
+};
+
 int main()
 {
     Board board;
 
-    board.add(std::make_unique<Triangle>(board, 40, 12, 10));
+    board.add(make_unique<Triangle>(board, 1, 5, 3)); //a triangle cropped to the left
+    board.add(make_unique<Circle>(board, 10, 5, 5));
 
     board.draw();
 

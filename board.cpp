@@ -132,12 +132,81 @@ public:
     }
 };
 
+class Rectangle : public Shape {
+private:
+    int x, y, width, height;
+    Board& board;
+
+public:
+    Rectangle(Board& board, int x, int y, int width, int height)
+        : board(board) {
+        this->x = x;
+        this->y = y;
+        this->width = width;
+        this->height = height;
+    }
+
+    void draw() override {
+        vector<vector<char>>& grid = board.getGrid();
+
+        if (width <= 0 || height <= 0) return;
+
+        for (int i = 0; i < width; ++i) {
+            int topX = x + i;
+            int bottomX = x + i;
+            if (topX >= 0 && topX < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT)
+                grid[y][topX] = '*';  //top side
+            if (bottomX >= 0 && bottomX < BOARD_WIDTH && y + height - 1 >= 0 && y + height - 1 < BOARD_HEIGHT)
+                grid[y + height - 1][bottomX] = '*';  //bottom side
+        }
+
+        for (int j = 0; j < height; ++j) {
+            int leftY = y + j;
+            int rightY = y + j;
+            if (x >= 0 && x < BOARD_WIDTH && leftY >= 0 && leftY < BOARD_HEIGHT)
+                grid[leftY][x] = '*';  //left side
+            if (x + width - 1 >= 0 && x + width - 1 < BOARD_WIDTH && rightY >= 0 && rightY < BOARD_HEIGHT)
+                grid[rightY][x + width - 1] = '*';  //right side
+        }
+    }
+};
+
+class Line : public Shape {
+private:
+    int x, y;    // Starting coordinates of the line
+    int length;  // Length of the line
+    Board& board;
+
+public:
+    Line(Board& board, int x, int y, int length)
+        : board(board) {
+        this->x = x;
+        this->y = y;
+        this->length = length;
+    }
+
+    void draw() override {
+        vector<vector<char>>& grid = board.getGrid();
+
+        if (length <= 0) return;
+
+        for (int i = 0; i < length; ++i) {
+            int drawX = x + i; //looping for each next x
+            if (drawX >= 0 && drawX < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT) {
+                grid[y][drawX] = '*';
+            }
+        }
+    }
+};
+
 int main()
 {
     Board board;
 
     board.add(make_unique<Triangle>(board, 1, 5, 3)); //a triangle cropped to the left
     board.add(make_unique<Circle>(board, 10, 5, 5));
+    board.add(make_unique<Rectangle>(board, 3, 6, 8, 5));
+    board.add(make_unique<Line>(board, -1, 12, 15));
 
     board.draw();
 

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 const int BOARD_WIDTH = 80;
@@ -46,13 +48,25 @@ public:
         }
     }
 
-    void add(unique_ptr<Shape> shape) { //add to the list of shapes
+    void addToList(unique_ptr<Shape> shape) { //add to the list of shapes
         shapes.push_back(move(shape));
     }
 
     void undo() {
         if (!shapes.empty()) {
             shapes.pop_back(); //remove the last added shape from the shapes vector
+        }
+    }
+
+    void list() {
+        if (shapes.empty()) {
+            cout << "None" << endl;
+            return;
+        }
+
+        cout << "List of shapes:" << endl;
+        for (const auto& shape : shapes) {
+            cout << typeid(*shape).name() << endl;
         }
     }
 
@@ -199,16 +213,106 @@ public:
     }
 };
 
+class FileReader {
+private:
+    string filename;
+
+public:
+    FileReader(const string& filename) : filename(filename) {
+        this->filename = filename;
+    }
+
+    void parseFile(Board& board) {
+        ifstream file(filename);
+
+        if (!file) {
+            cerr << "Error opening file" << endl;
+            return;
+        }
+
+        string line;
+        while (getline(file, line)) {
+            stringstream ss(line);
+            string command, shape;
+            int x, y, param1, param2 = 0;
+
+            ss >> command >> shape >> x >> y >> param1; //parsing
+
+            if (shape == "Triangle") {
+                board.addToList(make_unique<Triangle>(board, x, y, param1));
+            } else if (shape == "Circle") {
+                board.addToList(make_unique<Circle>(board, x, y, param1));
+            } else if (shape == "Rectangle") {
+                ss >> param2; //for width, the fourth param
+                board.addToList(make_unique<Rectangle>(board, x, y, param1, param2));
+            } else if (shape == "Line") {
+                board.addToList(make_unique<Line>(board, x, y, param1));
+            }
+        }
+    }
+};
+
 int main()
 {
     Board board;
+    int choice;
 
-    board.add(make_unique<Triangle>(board, 1, 5, 3)); //a triangle cropped to the left
-    board.add(make_unique<Circle>(board, 10, 5, 5));
-    board.add(make_unique<Rectangle>(board, 3, 6, 8, 5));
-    board.add(make_unique<Line>(board, -1, 12, 15));
+    while (true) {
+        cout << "1. Draw blackboard" << endl;
+        cout << "2. List added shapes" << endl;
+        cout << "3. Load shapes from file" << endl;
+        cout << "4. Add shape" << endl;
+        cout << "5. Undo last shape" << endl;
+        cout << "6. Exit" << endl;
+        cin >> choice;
 
-    board.draw();
+        switch (choice) {
+            case 1:
+                board.draw();
+                break;
+            case 2:
+                board.list();
+                break;
+            case 3: {
+                string filename = "/Users/home/CLionProjects/Board/shapes.txt";
+                FileReader fileReader(filename);
+                fileReader.parseFile(board);
+                break;
+            }
+            case 4: {
+                string shapeCommand;
+                cin.ignore();
+                getline(cin, shapeCommand);
+                stringstream ss(shapeCommand);
+                string command, shapeType;
+                int x, y, param1, param2 = 0;
+
+                ss >> command >> shapeType >> x >> y >> param1;
+
+                if (shapeType == "Circle") {
+                    board.addToList(make_unique<Circle>(board, x, y, param1));
+                } else if (shapeType == "Rectangle") {
+                    ss >> param2; // width
+                    board.addToList(make_unique<Rectangle>(board, x, y, param1, param2));
+                } else if (shapeType == "Triangle") {
+                    board.addToList(make_unique<Triangle>(board, x, y, param1));
+                } else if (shapeType == "Line") {
+                    board.addToList(make_unique<Line>(board, x, y, param1));
+                } else {
+                    cout << "Invalid shape type." << endl;
+                }
+                break;
+            }
+            case 5:
+                board.undo();
+                break;
+            case 6:
+                cout << "Exited" << endl;
+                return 0;
+            default:
+                cout << "Invalid input" << endl;
+        }
+    }
 
     return 0;
 }
